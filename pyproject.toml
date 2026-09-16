@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "murmure-dictation"
+version = "1.2.0"
+description = "Dictée Windows locale avec Faster-Whisper"
+requires-python = ">=3.11,<3.14"
+dependencies = ["PySide6-Essentials>=6.8,<7", "faster-whisper>=1.2,<2", "sounddevice>=0.5,<1"]
+
+[project.gui-scripts]
+murmure = "murmure.app:main"
+
+[tool.setuptools.packages.find]
+include = ["murmure*"]
+
+[tool.ruff]
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,5 @@
+PySide6-Essentials==6.11.2
+faster-whisper==1.2.1
+sounddevice==0.5.6
+ctranslate2==4.8.2
+numpy==2.4.6
