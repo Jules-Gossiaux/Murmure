@@ -8,6 +8,8 @@ Sur cette machine, l’environnement et le modèle **Base** sont déjà install�
 
 Après une mise à jour, utilisez d’abord **Quitter Murmure** dans le menu de son icône près de l’horloge, puis relancez. Fermer seulement la fenêtre la laisse active avec l’ancienne version.
 
+Murmure déclare son identité Windows (`JulesGossiaux.Murmure`) avant de créer sa fenêtre. L’icône Murmure doit donc apparaître dans la barre des tâches, y compris lorsque `run.bat` lance la version Python de développement. La distribution `dist\Murmure\Murmure.exe` contient aussi cette icône dans son exécutable.
+
 Une distribution autonome se trouve également dans **`dist\Murmure\Murmure.exe`**. Conservez le dossier `Murmure` entier, notamment `_internal` : l’exécutable n’est pas un fichier isolé.
 
 Sur une nouvelle installation :

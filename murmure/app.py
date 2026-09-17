@@ -16,7 +16,7 @@ from .storage import History, Settings, data_directory
 from .style import apply_theme
 from .ui import MainWindow
 from .widgets import Overlay, app_icon
-from .windows import Hotkey
+from .windows import Hotkey, set_app_user_model_id
 
 
 def configure_logging(directory: Path):
@@ -36,6 +36,12 @@ def main():
         "--smoke-test", action="store_true", help="Open UI, capture screenshots, exit without loading model"
     )
     args = parser.parse_args()
+    # Must happen before QApplication creates the first native window. This prevents
+    # a Python-launched development build from being grouped under the Python icon.
+    try:
+        set_app_user_model_id()
+    except OSError:
+        logging.getLogger(__name__).warning("Windows taskbar identity unavailable", exc_info=True)
     app = QApplication(sys.argv[:1])
     app.setApplicationName("Murmure")
     app.setOrganizationName("Murmure")

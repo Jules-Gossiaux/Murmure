@@ -15,6 +15,9 @@ from pathlib import Path
 from PySide6.QtCore import QAbstractNativeEventFilter, QObject, Signal
 
 user32 = ct.WinDLL("user32", use_last_error=True)
+shell32 = ct.WinDLL("shell32", use_last_error=True)
+shell32.SetCurrentProcessExplicitAppUserModelID.argtypes = [wt.LPCWSTR]
+shell32.SetCurrentProcessExplicitAppUserModelID.restype = ct.c_long
 user32.GetForegroundWindow.restype = wt.HWND
 user32.GetWindowThreadProcessId.argtypes = [wt.HWND, ct.POINTER(wt.DWORD)]
 user32.GetWindowThreadProcessId.restype = wt.DWORD
@@ -38,6 +41,13 @@ class GUITHREADINFO(ct.Structure):
 
 
 user32.GetGUIThreadInfo.argtypes = [wt.DWORD, ct.POINTER(GUITHREADINFO)]
+
+
+def set_app_user_model_id(identifier: str = "JulesGossiaux.Murmure") -> None:
+    """Give Python-launched windows the same taskbar identity as the packaged app."""
+    result = shell32.SetCurrentProcessExplicitAppUserModelID(identifier)
+    if result != 0:
+        raise OSError(f"SetCurrentProcessExplicitAppUserModelID failed: HRESULT 0x{result & 0xFFFFFFFF:08x}")
 
 
 @dataclass(frozen=True)
