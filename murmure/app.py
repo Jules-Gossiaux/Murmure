@@ -7,8 +7,9 @@ import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from PySide6.QtCore import QLibraryInfo, QLocalServer, QLocalSocket, QLockFile, QTimer, QTranslator
+from PySide6.QtCore import QLibraryInfo, QLockFile, QTimer, QTranslator
 from PySide6.QtGui import QAction, QFont
+from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QSystemTrayIcon
 
 from .controller import Controller, State
