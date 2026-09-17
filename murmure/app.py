@@ -7,7 +7,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from PySide6.QtCore import QLibraryInfo, QLockFile, QTimer, QTranslator
+from PySide6.QtCore import QLibraryInfo, QLocalServer, QLocalSocket, QLockFile, QTimer, QTranslator
 from PySide6.QtGui import QAction, QFont
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QSystemTrayIcon
 
@@ -55,12 +55,26 @@ def main():
     lock = QLockFile(str(directory / "instance.lock"))
     lock.setStaleLockTime(0)
     if not lock.tryLock(100):
+        # A second launch should reopen the existing window instead of making
+        # the user search for it in the notification area.
+        socket = QLocalSocket()
+        socket.connectToServer("Murmure.JulesGossiaux")
+        if socket.waitForConnected(300):
+            socket.write(b"show")
+            socket.waitForBytesWritten(300)
+            socket.disconnectFromServer()
+            return 0
         QMessageBox.information(
             None,
             "Murmure est déjà ouvert",
-            "Retrouvez Murmure dans la zone de notification Windows (icônes masquées près de l’horloge).",
+            "Murmure va être rouvert. Si sa fenêtre n’apparaît pas, utilisez son icône près de l’horloge.",
         )
         return 0
+    server_name = "Murmure.JulesGossiaux"
+    server = QLocalServer(app)
+    if not server.listen(server_name):
+        QLocalServer.removeServer(server_name)
+        server.listen(server_name)
     configure_logging(directory)
 
     def exception_hook(kind, value, traceback):
@@ -126,6 +140,14 @@ def main():
 
     controller.notice.connect(notice)
 
+    def reopen_window():
+        while server.hasPendingConnections():
+            connection = server.nextPendingConnection()
+            connection.deleteLater()
+        window.show_page(0)
+
+    server.newConnection.connect(reopen_window)
+
     def state_changed(state, message):
         try:
             hotkey.set_escape(state in ("starting", "recording"))
@@ -186,6 +208,8 @@ def main():
         overlay.hide()
         window.allow_close = True
         history.close()
+        server.close()
+        QLocalServer.removeServer(server_name)
         lock.unlock()
         app.quit()
 
