@@ -69,13 +69,10 @@ def card(name="card"):
 
 
 class NoWheelComboBox(QComboBox):
-    """Keep page scrolling from changing a selector under the mouse."""
+    """Prevent the mouse wheel from changing a selector in every state."""
 
     def wheelEvent(self, event):
-        if not self.hasFocus():
-            event.ignore()
-            return
-        super().wheelEvent(event)
+        event.ignore()
 
 
 class MainWindow(QMainWindow):
