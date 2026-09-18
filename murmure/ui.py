@@ -6,7 +6,7 @@ from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer, QUrl
+from PySide6.QtCore import QEvent, Qt, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QApplication,
@@ -69,10 +69,16 @@ def card(name="card"):
 
 
 class NoWheelComboBox(QComboBox):
-    """Prevent the mouse wheel from changing a selector in every state."""
+    """Consume wheel events so Qt can never use them to change the selection."""
+
+    def event(self, event):
+        if event.type() == QEvent.Type.Wheel:
+            event.accept()
+            return True
+        return super().event(event)
 
     def wheelEvent(self, event):
-        event.ignore()
+        event.accept()
 
 
 class MainWindow(QMainWindow):
