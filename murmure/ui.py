@@ -325,6 +325,18 @@ class MainWindow(QMainWindow):
         self.model.currentIndexChanged.connect(self.update_model_description)
         self.update_model_description()
         form.addRow("", self.model_description)
+        self.correction = QCheckBox("Corriger automatiquement le texte")
+        self.correction.setChecked(settings.correction)
+        form.addRow("Correction locale", self.correction)
+        form.addRow(
+            "",
+            label(
+                "Un petit modèle local corrige l’orthographe, la grammaire et les mots mal transcrits. "
+                "Il est téléchargé au premier usage (environ 491 Mo) et fonctionne sans Internet ensuite.",
+                "subtitle",
+                True,
+            ),
+        )
         self.language = QComboBox()
         for text, value in (
             ("Français", "fr"),
@@ -522,6 +534,7 @@ class MainWindow(QMainWindow):
         return replace(
             self.controller.settings,
             model=self.model.currentData(),
+            correction=self.correction.isChecked(),
             language=self.language.currentData(),
             microphone=self.microphone.currentData(),
             sounds=self.sounds.isChecked(),
@@ -547,6 +560,7 @@ class MainWindow(QMainWindow):
         ):
             widget.setCurrentIndex(widget.findData(value))
         self.key_edit.set_shortcut(settings.hotkey_mods, settings.hotkey_vk, settings.hotkey_label)
+        self.correction.setChecked(settings.correction)
         self.sounds.setChecked(settings.sounds)
         self.close_tray.setChecked(settings.close_to_tray)
         self.startup.setChecked(settings.startup)
@@ -605,6 +619,7 @@ class MainWindow(QMainWindow):
             return False
         self.controller.settings = updated
         self.controller.engine.cache = Path(updated.models_folder or self.controller.engine.default_cache)
+        self.controller.corrector.cache = self.controller.engine.cache
         apply_theme(QApplication.instance(), updated.theme)
         self.shortcut_hint.setText(f"{updated.hotkey_label} pour commencer. Le même raccourci pour terminer.")
         self.banner.hide()

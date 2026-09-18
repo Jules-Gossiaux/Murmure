@@ -12,6 +12,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, Signal, Slot
 
 from .audio import Recorder
+from .correction import CorrectionEngine
 from .engine import Engine
 from .storage import History, Settings
 from .windows import Target, foreground, insert_text
@@ -42,6 +43,8 @@ class Controller(QObject):
         super().__init__()
         self.directory, self.settings, self.history = directory, settings, history
         self.engine = Engine(directory)
+        self.corrector = CorrectionEngine(directory)
+        self.corrector.cache = Path(settings.models_folder or self.corrector.default_cache)
         self.engine_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="whisper")
         self.io_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="audio-input")
         self.state = State.LOADING
@@ -142,15 +145,35 @@ class Controller(QObject):
 
         def work():
             text = self.engine.transcribe(path, rate, settings.language, settings.vocabulary)
+            correction_error = ""
+            if settings.correction and text:
+                self.event.emit("correction-progress", "Correction locale en cours…")
+                try:
+                    text = self.corrector.correct(
+                        text,
+                        settings.language,
+                        lambda message: self.event.emit("correction-progress", message),
+                    )
+                except Exception as error:
+                    log.exception("Correction locale indisponible")
+                    correction_error = str(error)
             # Commit text before attempting any interaction with another application.
             self.history.update(
                 job,
                 text=text,
                 status="saved" if text else "empty",
-                detail="Texte enregistré." if text else "Aucune parole détectée.",
+                detail=(
+                    "Texte corrigé localement et enregistré."
+                    if settings.correction and text and not correction_error
+                    else "Correction indisponible ; transcription enregistrée."
+                    if correction_error and text
+                    else "Texte enregistré."
+                    if text
+                    else "Aucune parole détectée."
+                ),
             )
             self.history.release_audio(job)
-            return text
+            return text, correction_error
 
         self._state(State.TRANSCRIBING, "Transcription locale en cours…")
         self._submit(self.engine_pool, "transcribed", work)
@@ -184,6 +207,9 @@ class Controller(QObject):
         if kind == "progress":
             if not self.closing:
                 self._state(State.LOADING, result)
+            return
+        if kind == "correction-progress":
+            self._state(State.TRANSCRIBING, result)
             return
         if kind == "started":
             self.record_started = time.monotonic()
@@ -251,6 +277,12 @@ class Controller(QObject):
         elif kind == "transcribed":
             self.transcription_seconds = time.monotonic() - self.transcription_started
             self.history_changed.emit()
+            value, correction_error = value
+            if correction_error:
+                self.notice.emit(
+                    f"La transcription est disponible, mais la correction locale a échoué :\n\n{correction_error}",
+                    True,
+                )
             if not value:
                 self._state(State.IDLE, "Aucune parole détectée.")
             elif self.target is None:

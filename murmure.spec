@@ -1,7 +1,7 @@
 from PyInstaller.utils.hooks import collect_all, collect_data_files
 
 datas, binaries, hiddenimports = [], [], []
-for package in ('faster_whisper', 'ctranslate2', 'onnxruntime', 'av', 'tokenizers', '_sounddevice_data'):
+for package in ('faster_whisper', 'ctranslate2', 'onnxruntime', 'av', 'tokenizers', 'llama_cpp', '_sounddevice_data'):
     data, binary, hidden = collect_all(package)
     datas += data
     binaries += binary

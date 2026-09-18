@@ -40,6 +40,8 @@ Fermer la fenêtre laisse normalement Murmure actif. Double-cliquez sur son icô
 - **Modèle** : Tiny privilégie la vitesse ; Base reste le plus rapide ; **Small est recommandé** pour améliorer la précision sans trop augmenter l’attente (mesuré ici : environ 2 secondes pour 7,4 secondes d’audio sur CPU). **Large v3 Turbo** est disponible pour une reconnaissance multilingue plus puissante, mais son nom ne garantit pas une latence inférieure sur CPU et son téléchargement est important ; Medium reste disponible. Chaque choix affiche son explication dans les paramètres. Tailles approximatives : Tiny 75 Mo, Base 145 Mo, Small 485 Mo, Turbo 1,6 Go, Medium 1,5 Go. Sélectionnez le modèle, puis **Appliquer les paramètres**. Le premier téléchargement et le chargement se font en arrière-plan ; le modèle reste ensuite en mémoire.
 
 Le temps de transcription mesuré est affiché après chaque dictée. Un modèle plus grand peut dépasser 2 secondes sur CPU, et une longue dictée peut dépasser 10 secondes : aucun délai maximal n’est garanti. Si votre priorité est 1–2 secondes, commencez par Small sur cette machine, puis comparez avec Turbo. Le nom Turbo décrit l’accélération de son architecture ; il ne signifie pas qu’il est plus rapide que Base ou Small.
+
+Dans les paramètres, **Corriger automatiquement le texte** active un second modèle local compact. Murmure utilise **Qwen2.5-0.5B-Instruct Q4_K_M** (environ 491 Mo, CPU, licence Apache-2.0) pour corriger l’orthographe, la grammaire et les mots manifestement mal transcrits. Il est téléchargé au premier texte à corriger dans le dossier des modèles, puis fonctionne hors ligne. La correction est désactivée par défaut et n’ajoute aucun délai lorsqu’elle est désactivée.
 - **Langue** : français initialement, détection automatique ou six autres langues.
 - **Vocabulaire** : expressions et acronymes, un par ligne, transmis à Faster-Whisper via `hotwords`. Ce sont des indications, pas un dictionnaire de remplacement garanti. Les listes courtes fonctionnent mieux.
 - **Sons**, **fermeture vers la zone de notification** et **démarrage à l’ouverture de Windows** sont facultatifs. Le lancement automatique utilise uniquement la clé de registre de votre utilisateur.
@@ -115,5 +117,7 @@ Les responsabilités sont séparées dans `storage.py`, `audio.py`, `engine.py`,
 
 - [Faster-Whisper : moteur, CUDA, transcription et VAD](https://github.com/SYSTRAN/faster-whisper)
 - [API Faster-Whisper : `hotwords` et options de transcription](https://github.com/SYSTRAN/faster-whisper/blob/master/faster_whisper/transcribe.py)
+- [Qwen2.5-0.5B-Instruct GGUF](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF)
+- [llama-cpp-python](https://github.com/abetlen/llama-cpp-python)
 - [Microsoft : RegisterHotKey et MOD_NOREPEAT](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey)
 - [Microsoft : SendInput et restrictions UIPI](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendinput)

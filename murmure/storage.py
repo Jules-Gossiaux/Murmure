@@ -24,6 +24,7 @@ def data_directory() -> Path:
 @dataclass
 class Settings:
     model: str = "base"
+    correction: bool = False
     language: str = "fr"
     microphone: str = ""
     hotkey_mods: int = 2
