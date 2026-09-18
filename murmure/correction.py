@@ -19,6 +19,11 @@ class CorrectionEngine:
         self.model = None
         self.model_path: Path | None = None
 
+    @property
+    def downloaded(self) -> bool:
+        path = self.cache / "correction" / FILENAME
+        return path.is_file() and path.stat().st_size >= 100_000_000
+
     def load(self, report) -> None:
         if self.model is not None:
             return

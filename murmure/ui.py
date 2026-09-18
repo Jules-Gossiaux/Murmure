@@ -68,6 +68,16 @@ def card(name="card"):
     return widget, layout
 
 
+class NoWheelComboBox(QComboBox):
+    """Keep page scrolling from changing a selector under the mouse."""
+
+    def wheelEvent(self, event):
+        if not self.hasFocus():
+            event.ignore()
+            return
+        super().wheelEvent(event)
+
+
 class MainWindow(QMainWindow):
     def __init__(self, controller, directory: Path):
         super().__init__()
@@ -80,6 +90,8 @@ class MainWindow(QMainWindow):
         self.countdown = 0
         self.latest_id = None
         self.pending_edits = {}
+        self.controller.correction_progress.connect(self.show_correction_progress)
+        self.controller.correction_finished.connect(self.finish_correction_download)
         self.edit_timer = QTimer(self)
         self.edit_timer.setSingleShot(True)
         self.edit_timer.setInterval(350)
@@ -308,7 +320,7 @@ class MainWindow(QMainWindow):
             "Cliquez, puis appuyez sur la combinaison. Appliquez pour l’activer partout."
         )
         form.addRow("Raccourci global", self.key_edit)
-        self.microphone = QComboBox()
+        self.microphone = NoWheelComboBox()
         self.microphone.setMinimumContentsLength(22)
         self.microphone.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         microphone_row = QHBoxLayout()
@@ -316,7 +328,7 @@ class MainWindow(QMainWindow):
         microphone_row.addWidget(button("↻", self.refresh_microphones))
         form.addRow("Microphone", microphone_row)
         self.refresh_microphones()
-        self.model = QComboBox()
+        self.model = NoWheelComboBox()
         for choice in MODELS:
             self.model.addItem(choice.label, choice.name)
         self.model.setCurrentIndex(self.model.findData(settings.model))
@@ -337,7 +349,21 @@ class MainWindow(QMainWindow):
                 True,
             ),
         )
-        self.language = QComboBox()
+        self.correction_download = button(
+            "Télécharger le correcteur maintenant", self.download_correction, "primary"
+        )
+        self.correction_status = label(
+            "Préparez-le avant votre première dictée pour éviter un téléchargement pendant l’utilisation.",
+            "subtitle",
+            True,
+        )
+        if self.controller.corrector.downloaded:
+            self.correction_status.setText("Correcteur local déjà téléchargé et disponible hors ligne.")
+            self.correction_download.setText("Correcteur déjà téléchargé")
+            self.correction_download.setEnabled(False)
+        form.addRow("Préparation", self.correction_download)
+        form.addRow("", self.correction_status)
+        self.language = NoWheelComboBox()
         for text, value in (
             ("Français", "fr"),
             ("Détection automatique", "auto"),
@@ -363,7 +389,7 @@ class MainWindow(QMainWindow):
         body_layout.addWidget(input_card)
         behavior, content = card()
         content.addWidget(label("Au quotidien", "section"))
-        self.theme = QComboBox()
+        self.theme = NoWheelComboBox()
         self.theme.addItem("Clair", "light")
         self.theme.addItem("Sombre", "dark")
         self.theme.setCurrentIndex(self.theme.findData(settings.theme))
@@ -443,6 +469,24 @@ class MainWindow(QMainWindow):
     def update_model_description(self):
         choice = MODEL_BY_NAME.get(self.model.currentData())
         self.model_description.setText(choice.description if choice else "")
+
+    def download_correction(self):
+        self.correction_download.setEnabled(False)
+        self.correction_download.setText("Téléchargement en cours…")
+        self.correction_status.setText("Préparation du correcteur local…")
+        self.controller.prepare_correction()
+
+    def show_correction_progress(self, message):
+        self.correction_status.setText(message)
+
+    def finish_correction_download(self, success, message):
+        self.correction_status.setText(message)
+        if success:
+            self.correction_download.setText("Correcteur déjà téléchargé")
+            self.correction_download.setEnabled(False)
+        else:
+            self.correction_download.setText("Réessayer le téléchargement")
+            self.correction_download.setEnabled(True)
 
     def navigate(self, index):
         current = self.pages.currentIndex()

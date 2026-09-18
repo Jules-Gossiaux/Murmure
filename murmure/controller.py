@@ -38,6 +38,8 @@ class Controller(QObject):
     notice = Signal(str, bool)
     ready_to_quit = Signal()
     event = Signal(str, object)
+    correction_progress = Signal(str)
+    correction_finished = Signal(bool, str)
 
     def __init__(self, directory: Path, settings: Settings, history: History):
         super().__init__()
@@ -89,6 +91,18 @@ class Controller(QObject):
             self.engine_pool,
             "loaded",
             lambda: self.engine.load(name, lambda message: self.event.emit("progress", message)),
+        )
+
+    def prepare_correction(self):
+        if self.closing:
+            return
+        if self.corrector.downloaded:
+            self.correction_finished.emit(True, "Le correcteur local est déjà téléchargé.")
+            return
+        self._submit(
+            self.engine_pool,
+            "correction-prepared",
+            lambda: self.corrector.load(self.correction_progress.emit),
         )
 
     def toggle(self):
@@ -219,6 +233,14 @@ class Controller(QObject):
             return
         self.pending_tasks -= 1
         success, value = result
+        if kind == "correction-prepared":
+            self.correction_finished.emit(
+                success,
+                "Correcteur local prêt."
+                if success
+                else f"Téléchargement du correcteur impossible : {value}",
+            )
+            return
         if kind == "captured" and self.cancelled:
             # The microphone worker has closed its file before we remove it.
             self.history.delete(self.job)
